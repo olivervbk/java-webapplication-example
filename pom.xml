@@ -25,7 +25,7 @@
 				<artifactId>frontend-maven-plugin</artifactId>
 				<version>1.0</version>
 				<configuration>
-					<skip>${frontend.skip}</skip>
+					<skip>true</skip>
 				</configuration>
 				<executions>
 					<execution>
@@ -48,8 +48,8 @@
 						<configuration>
 							<!-- 
 							<arguments>install - -ca="" - -strict-ssl=true - -registry=https://nexus.minds.local/content/repositories/npmjs/</arguments> 
-							-->
-							<arguments>install --registry=https://nexus.minds.local/content/repositories/npmjs/</arguments>
+							<arguments>install - -registry=https://nexus.minds.local/content/repositories/npmjs/</arguments>
+							-->							
 						</configuration>
 					</execution>
 					<execution>
