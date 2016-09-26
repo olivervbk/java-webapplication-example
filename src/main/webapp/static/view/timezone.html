@@ -1,0 +1,72 @@
+<div class="jumbotron">
+	<h2>Timezone</h2>
+    <form name="tzForm" ng-submit="save(timezone)" role="form" novalidate>
+    	<input type="hidden" name="id" id="id" ng-model="timezone.id" />
+        <div class="form-group">
+            <label for="username">Name</label>
+            <input type="text" name="name" id="name" class="form-control" ng-model="timezone.name" required />
+            <span ng-show="tzForm.name.$dirty" class="help-block error">{{tzFormErrors['name']}}</span>
+            <span ng-show="tzForm.name.$dirty && tzForm.name.$error.required" class="help-block error">Name is required</span>
+        </div>
+        <div class="form-group">
+            <label for="username">City</label>
+            <input type="text" name="city" id="city" class="form-control" ng-model="timezone.city" required />
+            <span ng-show="tzForm.city.$dirty" class="help-block error">{{tzFormErrors['city']}}</span>
+            <span ng-show="tzForm.city.$dirty && tzForm.city.$error.required" class="help-block error">City is required</span>
+        </div>
+        <div class="form-group" >
+            <label for="username">Offset</label>
+            <input type="number" name="offset" id="offset" class="form-control" ng-model="timezone.offset" required />
+            <div ng-show="tzForm.offset.$dirty" role="alert">
+            	<span ng-show="tzForm.offset.$error.pattern" class="error">Value out of bounds (-18 - +18)</span>
+            	<span ng-show="tzForm.offset.$error.backend" class="error">{{tzFormErrors['offset']}}</span>
+            	<span ng-show="tzForm.offset.$error.required" class="error">Offset is required</span>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" ng-disabled="tzForm.$invalid" class="btn btn-primary">Save</button>
+            <button type="reset" class="btn btn-primary" ng-click="clear()">Clear</a>
+        </div>
+    </form>
+</div>
+
+<div class="jumbotron">
+	<h2>Filter</h2>
+	<form name="filterForm" ng-submit="filter(tzFilter)" role="form">
+        <div class="form-group" ng-class="{ 'has-error': form.name.$dirty && form.name.$error.required }">
+            <input type="text" name="name" id="name" class="form-control" ng-model="tzFilter.name" required />
+            <span ng-show="form.name.$dirty && form.name.$error.required" class="help-block">Name is required</span>
+        </div>
+        <div class="form-actions">
+            <button type="submit" ng-disabled="form.$invalid || vm.dataLoading" class="btn btn-primary">Filter</button>
+            <button type="reset"  class="btn btn-primary" ng-click="showAll()">Show all</a>
+        </div>
+    </form>
+</div>
+
+<div class="container">
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>City</th>
+				<th>GMT offset</th>
+				<th>Owner</th>
+				<th>Localtime</th>
+				<th>Edit</th>
+				<th>Delete</th>
+			</tr>
+		<thead>
+		<tbody>
+			<tr ng-repeat="x in timezones">
+				<td>{{ x.name }}</td>
+				<td>{{ x.city }}</td>
+				<td>{{ x.offset }}</td>
+				<td>{{ x.owner.username }}</td>
+				<td>{{ x.clock | date:'medium' }}</td>
+				<td><button class="btn btn-primary" ng-click="edit(x)">Edit</button></td>
+				<td><button class="btn btn-danger" ng-click="remove(x)">Delete</button></td>
+			</tr>
+		</tbody>
+	</table>
+</div>
