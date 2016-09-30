@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.olivervbk</groupId>
-	<artifactId>timezone-proj</artifactId>
+	<artifactId>java-webapplication-example</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 
@@ -14,12 +14,33 @@
 
 		<spring.version>4.3.0.RELEASE</spring.version>
 		<spring.security.version>4.1.0.RELEASE</spring.security.version>
-
-		<jacoco.version>0.7.7.201606060606</jacoco.version>
+        <cargo.tomcat8x.zipUrl>http://mirror.nbtelecom.com.br/apache/tomcat/tomcat-8/v8.5.5/bin/apache-tomcat-8.5.5.zip</cargo.tomcat8x.zipUrl>
 	</properties>
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.12</version>
+				<configuration>
+					<portNames>
+						<portName>http.port</portName>
+						<portName>ajp.port</portName>
+						<portName>rmi.port</portName>
+					</portNames>
+				</configuration>
+				<executions>
+					<execution>
+						<id>reserve-port</id>
+						<phase>test</phase>
+						<goals>
+							<goal>reserve-network-port</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
@@ -46,10 +67,8 @@
 						</goals>
 						<phase>generate-resources</phase>
 						<configuration>
-							<!-- 
-							<arguments>install - -ca="" - -strict-ssl=true - -registry=https://nexus.minds.local/content/repositories/npmjs/</arguments> 
-							<arguments>install - -registry=https://nexus.minds.local/content/repositories/npmjs/</arguments>
-							-->							
+							<!-- <arguments>install - -ca="" - -strict-ssl=true - -registry=https://nexus.minds.local/content/repositories/npmjs/</arguments> 
+								<arguments>install - -registry=https://nexus.minds.local/content/repositories/npmjs/</arguments> -->
 						</configuration>
 					</execution>
 					<execution>
@@ -70,7 +89,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
 				<version>2.6</version>
@@ -87,12 +106,27 @@
 			</plugin>
 
 			<plugin>
+				<groupId>com.github.klieber</groupId>
+				<artifactId>phantomjs-maven-plugin</artifactId>
+				<version>0.7</version>
+				<executions>
+					<execution>
+						<phase>test</phase>
+						<goals>
+							<goal>install</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<version>1.9.8</version>
+				</configuration>
+			</plugin>
+
+
+			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>${jacoco.version}</version>
-				<configuration>
-					<skip>${skip.unit.tests}</skip>
-				</configuration>
+				<version>0.7.7.201606060606</version>
 				<executions>
 					<!-- unit test coverage -->
 					<execution>
@@ -102,6 +136,7 @@
 						</goals>
 						<configuration>
 							<propertyName>jacoco.ut.argLine</propertyName>
+							<skip>${skip.unit.tests}</skip>
 						</configuration>
 					</execution>
 					<execution>
@@ -111,8 +146,27 @@
 							<goal>report</goal>
 						</goals>
 						<configuration>
+							<skip>${skip.unit.tests}</skip>
 						</configuration>
 					</execution>
+					<execution>
+						<id>jacoco-pre-integration-test</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>prepare-agent-integration</goal>
+						</goals>
+						<configuration>
+							<propertyName>jacoco.it.argLine</propertyName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>jacoco-post-integration-test</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report-integration</goal>
+						</goals>
+					</execution>
+
 				</executions>
 			</plugin>
 
@@ -121,9 +175,75 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.19.1</version>
 				<configuration>
+					<skip>${skip.unit.tests}</skip>
 					<!-- Sets the VM argument line used when unit tests are run. -->
 					<argLine>${jacoco.ut.argLine}</argLine>
+                    <testFailureIgnore>true</testFailureIgnore>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.cargo</groupId>
+				<artifactId>cargo-maven2-plugin</artifactId>
+				<version>1.6.0</version>
+				<configuration>
+					<container>
+						<containerId>tomcat8x</containerId>
+						<zipUrlInstaller>
+							<url>${cargo.tomcat8x.zipUrl}</url>
+							<downloadDir>${project.build.directory}/downloads</downloadDir>
+							<extractDir>${project.build.directory}/extracts</extractDir>
+						</zipUrlInstaller>
+					</container>
+					<configuration>
+						<home>${project.build.directory}/catalina-base</home>
+						<properties>
+							<cargo.jvmargs>${jacoco.it.argLine}</cargo.jvmargs>
+							<cargo.servlet.port>${http.port}</cargo.servlet.port>
+							<cargo.tomcat.ajp.port>${ajp.port}</cargo.tomcat.ajp.port>
+							<cargo.rmi.port>${rmi.port}</cargo.rmi.port>
+						</properties>
+					</configuration>
+				</configuration>
+				<executions>
+                    <execution>
+						<id>cargo-start-tomcat</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>start</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>cargo-stop-tomcat</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>2.19.1</version>
+                <configuration>
+                  <includes>
+                    <include>PhantomJsIT.java</include>
+                  </includes>
+                  <systemPropertyVariables>
+                    <phantomjs.binary>${phantomjs.binary}</phantomjs.binary>
+                    <http.port>${http.port}</http.port>
+                  </systemPropertyVariables>
+                </configuration>
+                <executions>
+                  <execution>
+                    <goals>
+                      <goal>integration-test</goal>
+                      <goal>verify</goal>
+                    </goals>
+                  </execution>
+                </executions>
 			</plugin>
 
 			<plugin>
@@ -135,8 +255,9 @@
 					<path>/</path>
 					<contextReloadable>true</contextReloadable>
 					<systemProperties>
+						<!-- debug enabled -->
 						<JAVA_OPTS>-Xmx1024m -Xms256m -XX:MaxPermSize=256m -Xdebug
-							-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000</JAVA_OPTS>
+							-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8002</JAVA_OPTS>
 					</systemProperties>
 				</configuration>
 			</plugin>
@@ -335,5 +456,20 @@
 			<version>1.10.19</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>com.github.detro</groupId>
+			<artifactId>phantomjsdriver</artifactId>
+			<version>1.2.0</version>
+			<scope>test</scope>
+			<exclusions>
+				<!-- dependecies we wont need -->
+				<exclusion>
+					<groupId>org.seleniumhq.selenium</groupId>
+					<artifactId>selenium-htmlunit-driver</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
 	</dependencies>
 </project>
