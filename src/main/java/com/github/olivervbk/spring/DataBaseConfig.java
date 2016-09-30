@@ -49,7 +49,8 @@ public class DataBaseConfig
 			final DriverManagerDataSource ds = new DriverManagerDataSource();
 
 			ds.setDriverClassName( "org.hsqldb.jdbcDriver" );
-			ds.setUrl( "jdbc:hsqldb:file:h2db;files_readonly=true;ifexists=true" );
+			//ifexists=true
+			ds.setUrl( "jdbc:hsqldb:file:h2db;files_readonly=true;ifexists=false" );
 			ds.setUsername( "sa" );
 			ds.setPassword( "" );
 
